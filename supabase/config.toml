@@ -1,0 +1,4 @@
+project_id = "tntgvztkwonyedoxayal"
+
+[functions.map-donation]
+verify_jwt = false
