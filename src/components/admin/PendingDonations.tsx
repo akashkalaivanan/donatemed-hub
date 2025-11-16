@@ -50,6 +50,12 @@ export const PendingDonations = ({ onUpdate }: { onUpdate: () => void }) => {
   const handleApprove = async (donationId: string) => {
     setProcessing(donationId);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("Not authenticated");
+        return;
+      }
+
       const { error } = await supabase
         .from("donations")
         .update({ status: "approved" })
@@ -57,12 +63,21 @@ export const PendingDonations = ({ onUpdate }: { onUpdate: () => void }) => {
 
       if (error) throw error;
 
-      // Trigger mapping algorithm
-      await supabase.functions.invoke("map-donation", {
-        body: { donationId }
+      // Trigger mapping algorithm with auth
+      const { error: fnError } = await supabase.functions.invoke("map-donation", {
+        body: { donationId },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
       });
 
-      toast.success("Donation approved and mapped!");
+      if (fnError) {
+        console.error("Mapping error:", fnError);
+        toast.error("Donation approved but mapping failed");
+      } else {
+        toast.success("Donation approved and mapped!");
+      }
+      
       fetchPendingDonations();
       onUpdate();
     } catch (error: any) {
