@@ -107,6 +107,33 @@ export type Database = {
           },
         ]
       }
+      edge_function_rate_limits: {
+        Row: {
+          created_at: string | null
+          function_name: string
+          id: string
+          request_count: number | null
+          user_id: string
+          window_start: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          function_name: string
+          id?: string
+          request_count?: number | null
+          user_id: string
+          window_start?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          function_name?: string
+          id?: string
+          request_count?: number | null
+          user_id?: string
+          window_start?: string | null
+        }
+        Relationships: []
+      }
       mappings: {
         Row: {
           created_at: string | null
@@ -246,11 +273,24 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_rate_limit: {
+        Args: {
+          _function_name: string
+          _max_requests: number
+          _user_id: string
+          _window_minutes: number
+        }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      promote_user_to_admin: {
+        Args: { _requesting_admin_id: string; _user_id: string }
         Returns: boolean
       }
     }
