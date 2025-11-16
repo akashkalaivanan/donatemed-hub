@@ -51,6 +51,25 @@ serve(async (req) => {
       );
     }
 
+    // Check rate limit: 10 requests per 5 minutes
+    const { data: rateLimitOk, error: rateLimitError } = await supabaseClient
+      .rpc('check_rate_limit', {
+        _user_id: user.id,
+        _function_name: 'map-donation',
+        _max_requests: 10,
+        _window_minutes: 5
+      });
+
+    if (rateLimitError || !rateLimitOk) {
+      console.warn('Rate limit exceeded for user:', user.id);
+      return new Response(
+        JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log('Rate limit check passed for user:', user.id);
+
     const { donationId } = await req.json();
 
     // Get donation details
