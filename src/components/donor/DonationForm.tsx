@@ -7,6 +7,25 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Upload } from "lucide-react";
+import { z } from "zod";
+
+const donationSchema = z.object({
+  medicine_name: z.string()
+    .min(1, "Medicine name is required")
+    .max(255, "Medicine name must be less than 255 characters")
+    .regex(/^[a-zA-Z0-9\s\-,.()']+$/, "Medicine name contains invalid characters"),
+  quantity: z.number()
+    .int("Quantity must be a whole number")
+    .positive("Quantity must be greater than 0")
+    .max(100000, "Quantity seems unrealistic"),
+  expiry_date: z.string()
+    .refine((date) => new Date(date) >= new Date(new Date().setHours(0, 0, 0, 0)), {
+      message: "Expiry date must be in the future"
+    }),
+  description: z.string()
+    .max(2000, "Description must be less than 2000 characters")
+    .optional()
+});
 
 interface DonationFormProps {
   onSuccess: () => void;
@@ -29,12 +48,27 @@ export const DonationForm = ({ onSuccess }: DonationFormProps) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      const { error } = await supabase.from("donations").insert({
-        donor_id: user.id,
-        medicine_name: formData.medicine_name,
+      // Validate input data
+      const validationResult = donationSchema.safeParse({
+        medicine_name: formData.medicine_name.trim(),
         quantity: parseInt(formData.quantity),
         expiry_date: formData.expiry_date,
-        description: formData.description,
+        description: formData.description?.trim() || undefined
+      });
+
+      if (!validationResult.success) {
+        const firstError = validationResult.error.errors[0];
+        toast.error(firstError.message);
+        setLoading(false);
+        return;
+      }
+
+      const { error } = await supabase.from("donations").insert({
+        donor_id: user.id,
+        medicine_name: validationResult.data.medicine_name,
+        quantity: validationResult.data.quantity,
+        expiry_date: validationResult.data.expiry_date,
+        description: validationResult.data.description || null,
         status: "pending",
       });
 
