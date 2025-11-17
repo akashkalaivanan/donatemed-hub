@@ -15,6 +15,7 @@ export const AuthForm = () => {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [role, setRole] = useState<UserRole>("donor");
+  const [organizationName, setOrganizationName] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -51,6 +52,7 @@ export const AuthForm = () => {
             data: {
               name,
               role,
+              ...(role === 'ngo' && { organization_name: organizationName }),
             },
             emailRedirectTo: `${window.location.origin}/`,
           },
@@ -112,6 +114,19 @@ export const AuthForm = () => {
                     </SelectContent>
                   </Select>
                 </div>
+                {role === 'ngo' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="organizationName">Organization Name</Label>
+                    <Input
+                      id="organizationName"
+                      type="text"
+                      placeholder="Your NGO Name"
+                      value={organizationName}
+                      onChange={(e) => setOrganizationName(e.target.value)}
+                      required
+                    />
+                  </div>
+                )}
               </>
             )}
             <div className="space-y-2">
