@@ -20,7 +20,7 @@ interface Medicine {
   }[];
 }
 
-export const AvailableMedicines = ({ refresh }: { refresh: number }) => {
+export const AvailableMedicines = ({ refresh, onClaim }: { refresh: number; onClaim?: () => void }) => {
   const [medicines, setMedicines] = useState<Medicine[]>([]);
   const [loading, setLoading] = useState(true);
   const [claiming, setClaiming] = useState<string | null>(null);
@@ -87,6 +87,7 @@ export const AvailableMedicines = ({ refresh }: { refresh: number }) => {
 
       toast.success("Medicine claimed successfully!");
       fetchAvailableMedicines();
+      onClaim?.();
     } catch (error: any) {
       toast.error(error.message || "Failed to claim medicine");
     } finally {

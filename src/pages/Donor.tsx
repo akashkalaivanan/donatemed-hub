@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { DonorStats } from "@/components/donor/DonorStats";
 import { DonationForm } from "@/components/donor/DonationForm";
 import { DonationsList } from "@/components/donor/DonationsList";
 import { supabase } from "@/lib/supabase";
@@ -36,8 +37,9 @@ const Donor = () => {
   };
 
   return (
-    <DashboardLayout title="My Donations" role="donor">
+    <DashboardLayout title="Donor Dashboard" role="donor">
       <div className="space-y-8">
+        <DonorStats refresh={refresh} />
         <DonationForm onSuccess={handleDonationSuccess} />
         <div>
           <h3 className="text-xl font-semibold mb-4">Your Donation History</h3>
