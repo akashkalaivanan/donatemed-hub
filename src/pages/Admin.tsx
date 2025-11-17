@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { DashboardStats } from "@/components/admin/DashboardStats";
 import { PendingDonations } from "@/components/admin/PendingDonations";
 import { InventoryView } from "@/components/admin/InventoryView";
 import { UserManagement } from "@/components/admin/UserManagement";
@@ -39,22 +40,26 @@ const Admin = () => {
 
   return (
     <DashboardLayout title="Admin Dashboard" role="admin">
-      <Tabs defaultValue="pending" className="space-y-6">
-        <TabsList className="grid w-full max-w-2xl grid-cols-3">
-          <TabsTrigger value="pending">Pending Approvals</TabsTrigger>
-          <TabsTrigger value="inventory">Inventory</TabsTrigger>
-          <TabsTrigger value="users">User Management</TabsTrigger>
-        </TabsList>
-        <TabsContent value="pending" className="space-y-4">
-          <PendingDonations onUpdate={handleUpdate} />
-        </TabsContent>
-        <TabsContent value="inventory" className="space-y-4">
-          <InventoryView refresh={refresh} />
-        </TabsContent>
-        <TabsContent value="users" className="space-y-4">
-          <UserManagement />
-        </TabsContent>
-      </Tabs>
+      <div className="space-y-6">
+        <DashboardStats refresh={refresh} />
+        
+        <Tabs defaultValue="pending" className="space-y-6">
+          <TabsList className="grid w-full max-w-2xl grid-cols-3">
+            <TabsTrigger value="pending">Pending Approvals</TabsTrigger>
+            <TabsTrigger value="inventory">Inventory</TabsTrigger>
+            <TabsTrigger value="users">User Management</TabsTrigger>
+          </TabsList>
+          <TabsContent value="pending" className="space-y-4">
+            <PendingDonations onUpdate={handleUpdate} />
+          </TabsContent>
+          <TabsContent value="inventory" className="space-y-4">
+            <InventoryView refresh={refresh} />
+          </TabsContent>
+          <TabsContent value="users" className="space-y-4">
+            <UserManagement />
+          </TabsContent>
+        </Tabs>
+      </div>
     </DashboardLayout>
   );
 };
