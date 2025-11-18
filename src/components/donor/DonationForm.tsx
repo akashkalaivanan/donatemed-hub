@@ -33,12 +33,61 @@ interface DonationFormProps {
 
 export const DonationForm = ({ onSuccess }: DonationFormProps) => {
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>("");
   const [formData, setFormData] = useState({
     medicine_name: "",
     quantity: "",
     expiry_date: "",
     description: "",
   });
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("Image size must be less than 5MB");
+        return;
+      }
+      if (!['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(file.type)) {
+        toast.error("Only JPG, PNG, and WEBP images are allowed");
+        return;
+      }
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  const uploadImage = async (userId: string): Promise<string | null> => {
+    if (!imageFile) return null;
+
+    setUploading(true);
+    try {
+      const fileExt = imageFile.name.split('.').pop();
+      const fileName = `${userId}/${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError, data } = await supabase.storage
+        .from('medicine-images')
+        .upload(fileName, imageFile, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('medicine-images')
+        .getPublicUrl(fileName);
+
+      return publicUrl;
+    } catch (error: any) {
+      toast.error("Failed to upload image");
+      throw error;
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,12 +112,19 @@ export const DonationForm = ({ onSuccess }: DonationFormProps) => {
         return;
       }
 
+      // Upload image if provided
+      let imageUrl = null;
+      if (imageFile) {
+        imageUrl = await uploadImage(user.id);
+      }
+
       const { error } = await supabase.from("donations").insert({
         donor_id: user.id,
         medicine_name: validationResult.data.medicine_name,
         quantity: validationResult.data.quantity,
         expiry_date: validationResult.data.expiry_date,
         description: validationResult.data.description || null,
+        image_url: imageUrl,
         status: "pending",
       });
 
@@ -81,6 +137,8 @@ export const DonationForm = ({ onSuccess }: DonationFormProps) => {
         expiry_date: "",
         description: "",
       });
+      setImageFile(null);
+      setImagePreview("");
       onSuccess();
     } catch (error: any) {
       toast.error(error.message || "Failed to submit donation");
@@ -145,8 +203,31 @@ export const DonationForm = ({ onSuccess }: DonationFormProps) => {
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             />
           </div>
-          <Button type="submit" disabled={loading} className="w-full bg-gradient-hero hover:opacity-90">
-            {loading ? "Submitting..." : "Submit Donation"}
+
+          <div className="space-y-2">
+            <Label htmlFor="image">Medicine Image (Optional)</Label>
+            <div className="space-y-3">
+              <Input
+                id="image"
+                type="file"
+                accept="image/jpeg,image/jpg,image/png,image/webp"
+                onChange={handleImageChange}
+                disabled={loading || uploading}
+              />
+              {imagePreview && (
+                <div className="relative w-full h-48 border rounded-lg overflow-hidden">
+                  <img 
+                    src={imagePreview} 
+                    alt="Medicine preview" 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+
+          <Button type="submit" disabled={loading || uploading} className="w-full bg-gradient-hero hover:opacity-90">
+            {uploading ? "Uploading image..." : loading ? "Submitting..." : "Submit Donation"}
           </Button>
         </form>
       </CardContent>

@@ -4,6 +4,7 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { NGOStats } from "@/components/ngo/NGOStats";
 import { AvailableMedicines } from "@/components/ngo/AvailableMedicines";
 import { ClaimedMedicines } from "@/components/ngo/ClaimedMedicines";
+import { NGOProfileSettings } from "@/components/ngo/NGOProfileSettings";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/lib/supabase";
 
@@ -43,15 +44,19 @@ const NGO = () => {
         <NGOStats refresh={refresh} />
         
         <Tabs defaultValue="available" className="space-y-6">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsList className="grid w-full max-w-2xl grid-cols-3">
             <TabsTrigger value="available">Available Medicines</TabsTrigger>
             <TabsTrigger value="claimed">My Claims</TabsTrigger>
+            <TabsTrigger value="settings">Requirements</TabsTrigger>
           </TabsList>
           <TabsContent value="available" className="space-y-4">
             <AvailableMedicines refresh={refresh} onClaim={handleUpdate} />
           </TabsContent>
           <TabsContent value="claimed" className="space-y-4">
             <ClaimedMedicines refresh={refresh} />
+          </TabsContent>
+          <TabsContent value="settings" className="space-y-4">
+            <NGOProfileSettings />
           </TabsContent>
         </Tabs>
       </div>
