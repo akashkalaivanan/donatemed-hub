@@ -5,6 +5,7 @@ import { DashboardStats } from "@/components/admin/DashboardStats";
 import { PendingDonations } from "@/components/admin/PendingDonations";
 import { InventoryView } from "@/components/admin/InventoryView";
 import { UserManagement } from "@/components/admin/UserManagement";
+import { Analytics } from "@/components/admin/Analytics";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/lib/supabase";
 
@@ -44,10 +45,11 @@ const Admin = () => {
         <DashboardStats refresh={refresh} />
         
         <Tabs defaultValue="pending" className="space-y-6">
-          <TabsList className="grid w-full max-w-2xl grid-cols-3">
+          <TabsList className="grid w-full max-w-3xl grid-cols-4">
             <TabsTrigger value="pending">Pending Approvals</TabsTrigger>
             <TabsTrigger value="inventory">Inventory</TabsTrigger>
             <TabsTrigger value="users">User Management</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
           </TabsList>
           <TabsContent value="pending" className="space-y-4">
             <PendingDonations onUpdate={handleUpdate} />
@@ -57,6 +59,9 @@ const Admin = () => {
           </TabsContent>
           <TabsContent value="users" className="space-y-4">
             <UserManagement />
+          </TabsContent>
+          <TabsContent value="analytics" className="space-y-4">
+            <Analytics refresh={refresh} />
           </TabsContent>
         </Tabs>
       </div>
