@@ -1,13 +1,14 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { supabase, UserRole } from "@/lib/supabase";
 import { toast } from "sonner";
-import { Heart } from "lucide-react";
+import { Heart, Ban } from "lucide-react";
 
 export const AuthForm = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -18,6 +19,17 @@ export const AuthForm = () => {
   const [organizationName, setOrganizationName] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isBlocked = searchParams.get('blocked') === 'true';
+
+  useEffect(() => {
+    if (isBlocked) {
+      toast.error("Your account has been blocked", {
+        description: "Please contact support for more information.",
+        duration: 5000,
+      });
+    }
+  }, [isBlocked]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,11 +47,21 @@ export const AuthForm = () => {
         if (data.user) {
           const { data: profile } = await supabase
             .from('profiles')
-            .select('role')
+            .select('role, status, blocked_reason')
             .eq('id', data.user.id)
             .single();
 
           if (profile) {
+            // Check if user is blocked
+            if (profile.status === 'blocked') {
+              await supabase.auth.signOut();
+              toast.error("Account Blocked", {
+                description: profile.blocked_reason || "Your account has been blocked. Contact support.",
+                duration: 6000,
+              });
+              return;
+            }
+
             navigate(`/${profile.role}`);
             toast.success("Welcome back!");
           }
@@ -74,18 +96,28 @@ export const AuthForm = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-secondary/20 to-primary/10 p-4">
-      <Card className="w-full max-w-md shadow-xl border-2">
-        <CardHeader className="space-y-2 text-center">
-          <div className="flex justify-center mb-2">
-            <div className="p-3 bg-gradient-hero rounded-full">
-              <Heart className="w-8 h-8 text-white" />
+      <div className="w-full max-w-md space-y-4">
+        {isBlocked && (
+          <Alert variant="destructive">
+            <Ban className="h-4 w-4" />
+            <AlertTitle>Account Blocked</AlertTitle>
+            <AlertDescription>
+              Your account has been blocked by an administrator. Please contact support for more information.
+            </AlertDescription>
+          </Alert>
+        )}
+        <Card className="shadow-xl border-2">
+          <CardHeader className="space-y-2 text-center">
+            <div className="flex justify-center mb-2">
+              <div className="p-3 bg-gradient-hero rounded-full">
+                <Heart className="w-8 h-8 text-white" />
+              </div>
             </div>
-          </div>
-          <CardTitle className="text-3xl font-bold">MediDonate</CardTitle>
-          <CardDescription className="text-base">
-            {isLogin ? "Sign in to your account" : "Create your account"}
-          </CardDescription>
-        </CardHeader>
+            <CardTitle className="text-3xl font-bold">MediDonate</CardTitle>
+            <CardDescription className="text-base">
+              {isLogin ? "Sign in to your account" : "Create your account"}
+            </CardDescription>
+          </CardHeader>
         <CardContent>
           <form onSubmit={handleAuth} className="space-y-4">
             {!isLogin && (
@@ -171,6 +203,7 @@ export const AuthForm = () => {
           </div>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 };

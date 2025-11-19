@@ -220,30 +220,42 @@ export type Database = {
       profiles: {
         Row: {
           address: string | null
+          blocked_at: string | null
+          blocked_by: string | null
+          blocked_reason: string | null
           created_at: string | null
           id: string
           name: string
           organization_name: string | null
           phone: string | null
           role: Database["public"]["Enums"]["user_role"]
+          status: Database["public"]["Enums"]["user_status"]
         }
         Insert: {
           address?: string | null
+          blocked_at?: string | null
+          blocked_by?: string | null
+          blocked_reason?: string | null
           created_at?: string | null
           id: string
           name: string
           organization_name?: string | null
           phone?: string | null
           role: Database["public"]["Enums"]["user_role"]
+          status?: Database["public"]["Enums"]["user_status"]
         }
         Update: {
           address?: string | null
+          blocked_at?: string | null
+          blocked_by?: string | null
+          blocked_reason?: string | null
           created_at?: string | null
           id?: string
           name?: string
           organization_name?: string | null
           phone?: string | null
           role?: Database["public"]["Enums"]["user_role"]
+          status?: Database["public"]["Enums"]["user_status"]
         }
         Relationships: []
       }
@@ -298,6 +310,7 @@ export type Database = {
       app_role: "admin" | "moderator" | "donor" | "ngo"
       donation_status: "pending" | "approved" | "rejected" | "claimed"
       user_role: "donor" | "ngo" | "admin"
+      user_status: "active" | "blocked" | "suspended"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -428,6 +441,7 @@ export const Constants = {
       app_role: ["admin", "moderator", "donor", "ngo"],
       donation_status: ["pending", "approved", "rejected", "claimed"],
       user_role: ["donor", "ngo", "admin"],
+      user_status: ["active", "blocked", "suspended"],
     },
   },
 } as const
