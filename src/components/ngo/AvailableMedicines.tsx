@@ -50,7 +50,7 @@ export const AvailableMedicines = ({ refresh, onClaim }: { refresh: number; onCl
         .single();
 
       if (ngo?.requirements) {
-        setNgoRequirements(ngo.requirements.toLowerCase());
+        setNgoRequirements(ngo.requirements);
       }
     } catch (error) {
       console.error("Error fetching NGO requirements:", error);
@@ -62,8 +62,19 @@ export const AvailableMedicines = ({ refresh, onClaim }: { refresh: number; onCl
       return { isMatch: false, score: 0 };
     }
 
+    // Parse requirements if it's JSON array
+    let requirementsText = ngoRequirements;
+    try {
+      const parsed = JSON.parse(ngoRequirements);
+      if (Array.isArray(parsed)) {
+        requirementsText = parsed.map((r: any) => r.text).join(' ').toLowerCase();
+      }
+    } catch {
+      // Keep as is if not JSON (old format)
+    }
+
     const descLower = description.toLowerCase();
-    const reqWords = ngoRequirements.split(/\s+/).filter(w => w.length > 3);
+    const reqWords = requirementsText.split(/\s+/).filter(w => w.length > 3);
     const descWords = descLower.split(/\s+/).filter(w => w.length > 3);
     
     let matchCount = 0;
