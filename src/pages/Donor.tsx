@@ -23,9 +23,16 @@ const Donor = () => {
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("role")
+      .select("role, status")
       .eq("id", session.user.id)
       .single();
+
+    // Check if user is blocked
+    if (profile?.status === 'blocked') {
+      await supabase.auth.signOut();
+      navigate("/auth?blocked=true");
+      return;
+    }
 
     if (profile?.role !== "donor") {
       navigate(`/${profile?.role || "auth"}`);
