@@ -93,15 +93,30 @@ export const AvailableMedicines = ({ refresh, onClaim }: { refresh: number; onCl
 
   const fetchAvailableMedicines = async () => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: ngo } = await supabase
+        .from("ngos")
+        .select("id")
+        .eq("user_id", user.id)
+        .single();
+
+      if (!ngo) return;
+
       const { data, error } = await supabase
         .from("donations")
         .select(`
           *,
           profiles!donor_id(name),
-          mappings(similarity_score)
+          mappings!inner(
+            similarity_score,
+            ngo_id
+          )
         `)
         .eq("status", "approved")
-        .order("created_at", { ascending: false });
+        .eq("mappings.ngo_id", ngo.id)
+        .order("mappings.similarity_score", { ascending: false });
 
       if (error) throw error;
       
@@ -208,18 +223,26 @@ export const AvailableMedicines = ({ refresh, onClaim }: { refresh: number; onCl
       {medicines.map((medicine) => {
         const matchInfo = matchScores[medicine.id];
         return (
-          <Card key={medicine.id} className="hover:shadow-lg transition-shadow">
+          <Card key={medicine.id} className="hover:shadow-lg transition-shadow border-l-4 border-l-primary">
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between gap-2">
-                <CardTitle className="text-lg font-semibold">{medicine.medicine_name}</CardTitle>
+                <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                  <Package className="w-5 h-5 text-primary" />
+                  {medicine.medicine_name}
+                </CardTitle>
                 <div className="flex flex-col gap-1">
                   {medicine.mappings && medicine.mappings.length > 0 && (
-                    <Badge variant="outline" className="bg-accent/20">
-                      Suggested
-                    </Badge>
+                    <>
+                      <Badge variant="outline" className="bg-primary/10 border-primary text-xs">
+                        🎯 AI Matched
+                      </Badge>
+                      <Badge variant="default" className="bg-primary text-xs">
+                        {Math.round((medicine.mappings[0].similarity_score || 0) * 100)}% Match
+                      </Badge>
+                    </>
                   )}
-                  {matchInfo?.isMatch && (
-                    <Badge variant="default" className="bg-primary">
+                  {!medicine.mappings?.length && matchInfo?.isMatch && (
+                    <Badge variant="secondary" className="text-xs">
                       {matchInfo.score}% Match
                     </Badge>
                   )}
@@ -249,7 +272,22 @@ export const AvailableMedicines = ({ refresh, onClaim }: { refresh: number; onCl
               <span>Expires: {new Date(medicine.expiry_date).toLocaleDateString()}</span>
             </div>
             {medicine.description && (
-              <p className="text-sm text-muted-foreground line-clamp-2">{medicine.description}</p>
+              <div className="pt-2 border-t">
+                <p className="text-xs text-muted-foreground">
+                  <span className="font-medium text-foreground">Description:</span> {medicine.description}
+                </p>
+              </div>
+            )}
+            {medicine.mappings && medicine.mappings.length > 0 && (
+              <div className="pt-2 border-t bg-primary/5 -mx-6 px-6 py-3 rounded-b-lg mt-3">
+                <p className="text-xs font-medium text-primary mb-1 flex items-center gap-1">
+                  <HandHeart className="w-3 h-3" />
+                  Why this matches your requirements:
+                </p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Our AI algorithm analyzed this donation and found it highly relevant to your organization's medicine requirements ({Math.round((medicine.mappings[0].similarity_score || 0) * 100)}% match). This suggests it aligns well with your stated needs.
+                </p>
+              </div>
             )}
             <Button
               onClick={() => handleClaim(medicine.id)}
